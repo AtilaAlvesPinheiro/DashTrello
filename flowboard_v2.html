@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowBoard - Gerenciador de Projetos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ---------- TOKENS ---------- */
+  :root{
+    --bg:#0f0f1a;
+    --card:#1a1a2e;
+    --card-2:#22223e;
+    --border:#2a2a44;
+    --muted:#8a8aa3;
+    --text:#e8e8f5;
+    --purple:#7c3aed;
+    --blue:#00d4ff;
+    --danger:#ef4444;
+    --success:#10b981;
+    --gradient: linear-gradient(135deg,#7c3aed,#00d4ff);
+    --shadow: 0 10px 30px -10px rgba(124,58,237,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Poppins',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:var(--blue);text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea,select{font-family:inherit}
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{
+    background:var(--gradient);
+    border-radius:999px;
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+  *{scrollbar-width:thin;scrollbar-color:#7c3aed transparent}
+
+  /* ---------- ANIMAÇÕES ---------- */
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+  .screen{animation:fadeIn .35s ease-out}
+  .slide-up{animation:slideUp .4s ease-out}
+
+  /* ---------- AUTH ---------- */
+  .auth-wrap{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .auth-card{
+    width:100%;max-width:420px;background:var(--card);
+    border:1px solid var(--border);border-radius:18px;padding:32px;
+    box-shadow:var(--shadow);
+    animation:slideUp .4s ease-out;
+  }
+  .brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:24px}
+  .brand-logo{
+    width:56px;height:56px;border-radius:16px;background:var(--gradient);
+    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:24px;
+    box-shadow:var(--shadow);
+  }
+  .brand-title{
+    font-size:28px;font-weight:700;
+    background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .auth-card h2{font-size:22px;margin-bottom:6px}
+  .auth-card p.sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+  .input{
+    width:100%;padding:11px 14px;border-radius:10px;background:var(--card-2);
+    border:1px solid var(--border);color:var(--text);font-size:14px;outline:none;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,58,237,.25)}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 16px;border-radius:10px;font-weight:600;font-size:14px;
+    transition:transform .15s, opacity .2s, background .2s;
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary{background:var(--gradient);color:white;box-shadow:var(--shadow);width:100%}
+  .btn-primary:hover{opacity:.92}
+  .btn-ghost{background:var(--card-2);border:1px solid var(--border);color:var(--text)}
+  .btn-danger{background:var(--danger);color:white}
+  .btn-sm{padding:7px 11px;font-size:12px;border-radius:8px}
+  .btn-icon{
+    width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
+    border-radius:10px;background:var(--card-2);border:1px solid var(--border);
+  }
+  .btn-icon:hover{background:#2c2c4a}
+  .auth-foot{margin-top:16px;text-align:center;font-size:13px;color:var(--muted)}
+  .err{color:var(--danger);font-size:13px;margin-top:8px;min-height:18px}
+
+  /* ---------- HEADER ---------- */
+  .app-header{
+    position:sticky;top:0;z-index:40;background:rgba(15,15,26,.85);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .header-inner{
+    max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .header-brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+  .header-brand .brand-logo{width:36px;height:36px;font-size:16px;border-radius:10px}
+  .header-brand .brand-title{font-size:18px}
+  .header-right{display:flex;align-items:center;gap:8px}
+  .user-chip{
+    max-width:160px;padding:7px 12px;border-radius:8px;background:var(--card-2);
+    font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);max-width:50%;overflow:hidden}
+  .crumbs a{color:var(--muted)}
+  .crumbs a:hover{color:var(--text)}
+  .crumbs .sep{opacity:.5}
+  .crumbs .current{
+    color:var(--text);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .container{max-width:1200px;margin:0 auto;padding:24px 20px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  .page-head h1{font-size:24px}
+  .page-head .sub{color:var(--muted);font-size:14px;margin-top:2px}
+
+  /* ---------- DASHBOARD GRID ---------- */
+  .grid{
+    display:grid;gap:16px;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  }
+  .project-card{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;
+    cursor:pointer;transition:transform .2s, border-color .2s, box-shadow .2s;
+    animation:pop .3s ease-out;display:flex;flex-direction:column;gap:10px;min-height:150px;
+  }
+  .project-card:hover{transform:translateY(-3px);border-color:var(--purple);box-shadow:var(--shadow)}
+  .pc-top{display:flex;align-items:center;gap:10px}
+  .pc-icon{
+    width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    color:white;font-size:18px;font-weight:700;flex-shrink:0;
+  }
+  .pc-name{
+    font-weight:600;font-size:15px;flex:1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .pc-desc{
+    color:var(--muted);font-size:13px;line-height:1.5;flex:1;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .pc-foot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}
+  .pc-actions{display:flex;gap:6px}
+  .empty{
+    text-align:center;padding:60px 20px;color:var(--muted);
+    border:2px dashed var(--border);border-radius:14px;
+  }
+  .empty h3{color:var(--text);margin-bottom:6px}
+
+  /* ---------- KANBAN ---------- */
+  .kanban-wrap{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;align-items:flex-start}
+  .column{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    width:300px;min-width:300px;display:flex;flex-direction:column;max-height:calc(100vh - 220px);
+  }
+  .col-head{padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+  .col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .col-name{font-weight:600;font-size:14px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .col-count{font-size:12px;color:var(--muted);background:var(--card-2);padding:2px 8px;border-radius:999px}
+  .col-actions{display:flex;gap:4px}
+  .col-body{padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;min-height:60px}
+  .col-foot{padding:8px 10px;border-top:1px solid var(--border)}
+  .col-foot button{
+    width:100%;padding:8px;border-radius:8px;color:var(--muted);font-size:13px;
+    border:1px dashed var(--border);transition:all .2s;
+  }
+  .col-foot button:hover{color:var(--text);border-color:var(--purple);background:rgba(124,58,237,.08)}
+
+  .task{
+    background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+    cursor:grab;transition:border-color .2s, transform .15s;
+    animation:pop .25s ease-out;
+  }
+  .task:hover{border-color:var(--purple)}
+  .task.dragging{opacity:.4}
+  .task-title{
+    font-size:13px;font-weight:500;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .task-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:11px;color:var(--muted)}
+  .task-due{display:flex;align-items:center;gap:4px}
+  .task-due.late{color:var(--danger)}
+  .col-body.drag-over{background:rgba(124,58,237,.07)}
+
+  .add-col-btn{
+    width:280px;min-width:280px;height:60px;border-radius:12px;border:2px dashed var(--border);
+    color:var(--muted);font-size:14px;transition:all .2s;
+  }
+  .add-col-btn:hover{border-color:var(--purple);color:var(--text);background:rgba(124,58,237,.05)}
+
+  /* ---------- BACKLOG ---------- */
+  .backlog{
+    margin-top:24px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;
+  }
+  .backlog h3{font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .backlog-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
+  .backlog-empty{color:var(--muted);font-size:13px;padding:8px}
+
+  /* ---------- MODAL ---------- */
+  .modal-back{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;
+    animation:fadeIn .2s ease-out;
+  }
+  .modal{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    width:100%;max-width:480px;padding:24px;animation:slideUp .25s ease-out;
+    max-height:90vh;overflow-y:auto;
+  }
+  .modal h3{margin-bottom:16px;font-size:18px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .modal-foot.between{justify-content:space-between}
+  .swatches{display:flex;flex-wrap:wrap;gap:8px}
+  .swatch{
+    width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+    transition:transform .15s;
+  }
+  .swatch:hover{transform:scale(1.1)}
+  .swatch.active{border-color:white;transform:scale(1.15)}
+  .icons-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+  .icon-btn{
+    aspect-ratio:1;border-radius:8px;background:var(--card-2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;
+  }
+  .icon-btn.active{background:var(--purple);border-color:var(--purple)}
+
+  /* ---------- TOOLTIP ---------- */
+  [data-tooltip]{position:relative}
+  [data-tooltip]:hover::after{
+    content:attr(data-tooltip);position:absolute;bottom:calc(100% + 6px);left:50%;
+    transform:translateX(-50%);background:#000;color:#fff;padding:5px 9px;border-radius:6px;
+    font-size:12px;white-space:nowrap;z-index:50;pointer-events:none;
+    animation:fadeIn .15s ease-out;max-width:240px;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* ---------- TOAST ---------- */
+  .toast-wrap{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:200}
+  .toast{
+    background:var(--card);border:1px solid var(--border);border-left:4px solid var(--purple);
+    padding:10px 14px;border-radius:8px;font-size:13px;animation:slideUp .25s ease-out;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.success{border-left-color:var(--success)}
+
+  @media (max-width:640px){
+    .crumbs{display:none}
+    .header-brand .brand-title{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root" class="toast-wrap"></div>
+
+<script>
+/* =========================================================
+   FlowBoard - SPA single-file (v2)
+   Backend: Supabase (REST/Auth) com fallback localStorage
+   Pronto para deploy estático (GitHub Pages, Netlify, etc).
+   ========================================================= */
+
+/* ============================================================
+   ⚙️  CONFIGURAÇÃO  — edite estas duas linhas para apontar
+   para o seu projeto Supabase. Para usar 100% offline, deixe
+   SUPABASE_URL = '' que o app cai automaticamente em
+   localStorage.
+   ============================================================ */
+const SUPABASE_URL = 'https://dqkxzyxkitvtumaltzro.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Nkqj8m2cZxbAFvVKjCoypw_yMq482jc';
+
+/* ---------- modo ---------- */
+const USE_SUPABASE = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+/* ---------- constantes UI ---------- */
+const STORE_KEY    = 'flowboard.v1';
+const SESSION_KEY  = 'flowboard.session';
+const SB_TOKEN_KEY = 'flowboard.sb_token';
+const SB_USER_KEY  = 'flowboard.sb_user';
+
+const COLORS = ['#7c3aed','#00d4ff','#ec4899','#f59e0b','#10b981','#ef4444','#3b82f6','#8b5cf6','#14b8a6','#f97316'];
+const ICONS  = ['📁','🚀','💼','🎯','💡','📊','🎨','🛠️','📚','🏆','⚡','🔥','🌟','🎮','💻','📱'];
+
+/* =========================================================
+   📦 SUPABASE CLIENT MÍNIMO (sem SDK — só fetch)
+   ========================================================= */
+const SB = {
+  token() { try { return JSON.parse(localStorage.getItem(SB_TOKEN_KEY)); } catch { return null; } },
+  setToken(t) { t ? localStorage.setItem(SB_TOKEN_KEY, JSON.stringify(t)) : localStorage.removeItem(SB_TOKEN_KEY); },
+  user() { try { return JSON.parse(localStorage.getItem(SB_USER_KEY)); } catch { return null; } },
+  setUser(u) { u ? localStorage.setItem(SB_USER_KEY, JSON.stringify(u)) : localStorage.removeItem(SB_USER_KEY); },
+
+  headers(extra = {}) {
+    const t = this.token();
+    return {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + (t?.access_token || SUPABASE_ANON_KEY),
+      'Content-Type': 'application/json',
+      ...extra,
+    };
+  },
+
+  async authRequest(path, body) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error_description || data.msg || data.message || 'Erro de autenticação');
+    return data;
+  },
+
+  async signUp(email, password, name) {
+    const data = await this.authRequest('signup', { email, password, data: { name } });
+    if (data.access_token) {
+      this.setToken({ access_token: data.access_token, refresh_token: data.refresh_token });
+      this.setUser(data.user);
+    }
+    return data;
+  },
+
+  async signIn(email, password) {
+    const data = await this.authRequest('token?grant_type=password', { email, password });
+    this.setToken({ access_token: data.access_token, refresh_token: data.refresh_token });
+    this.setUser(data.user);
+    return data;
+  },
+
+  async resetPassword(email) {
+    return this.authRequest('recover', { email });
+  },
+
+  async updatePassword(newPassword) {
+    const t = this.token();
+    if (!t) throw new Error('Sessão inválida');
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: this.headers(),
+      body: JSON.stringify({ password: newPassword }),
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      throw new Error(e.msg || 'Erro ao atualizar senha');
+    }
+    return r.json();
+  },
+
+  signOut() {
+    this.setToken(null);
+    this.setUser(null);
+  },
+
+  async rest(method, table, { select, filter, body, prefer } = {}) {
+    let url = `${SUPABASE_URL}/rest/v1/${table}`;
+    const qs = [];
+    if (select) qs.push('select=' + encodeURIComponent(select));
+    if (filter) qs.push(filter);
+    if (qs.length) url += '?' + qs.join('&');
+    const headers = this.headers();
+    if (prefer) headers['Prefer'] = prefer;
+    const r = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) {
+      const e = await r.text();
+      throw new Error(`Supabase ${method} ${table}: ${r.status} ${e}`);
+    }
+    if (r.status === 204) return null;
+    return r.json();
+  },
+};
+
+/* =========================================================
+   💾 STORE (localStorage fallback) — usado se USE_SUPABASE=false
+   ========================================================= */
+function loadStore(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {users:{}, data:{}}; }
+  catch{ return {users:{}, data:{}}; }
+}
+function saveStore(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+let store = loadStore();
+function persistLocal(){ saveStore(store); }
+
+function getLocalSession(){ return localStorage.getItem(SESSION_KEY); }
+function setLocalSession(email){ email ? localStorage.setItem(SESSION_KEY, email) : localStorage.removeItem(SESSION_KEY); }
+
+/* =========================================================
+   🔌 CAMADA DE DADOS UNIFICADA
+   currentUser() / userData() / persist()
+   ========================================================= */
+let cache = null;            // dados em memória do usuário logado
+let saveTimer = null;        // debounce de gravação no Supabase
+
+function currentUser(){
+  if (USE_SUPABASE) {
+    const u = SB.user();
+    if (!u) return null;
+    return { email: u.email, name: u.user_metadata?.name || u.email.split('@')[0], id: u.id };
+  } else {
+    const email = getLocalSession();
+    if (!email) return null;
+    return store.users[email] || null;
+  }
+}
+
+function userData(){
+  if (USE_SUPABASE) return cache; // carregado de loadRemoteData()
+  const u = currentUser(); if (!u) return null;
+  if (!store.data[u.email]) store.data[u.email] = { projects: {} };
+  return store.data[u.email];
+}
+
+function persist(){
+  if (USE_SUPABASE) {
+    // debounce: agrupa edições rápidas em uma única gravação
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveRemoteData, 400);
+  } else {
+    persistLocal();
+  }
+}
+
+/* ---------- Sincronização remota ----------
+   Modelo: cada projeto = 1 linha em `projects`. Colunas/tarefas/backlog
+   ficam serializados num campo JSON `data` (jsonb). Simples e portátil.
+   SQL esperado:
+     create table projects (
+       id uuid primary key,
+       user_id uuid not null references auth.users(id) on delete cascade,
+       name text, description text, color text, icon text,
+       data jsonb not null default '{}'::jsonb,
+       created_at timestamptz default now(),
+       updated_at timestamptz default now()
+     );
+     alter table projects enable row level security;
+     create policy "own" on projects for all
+       using (auth.uid() = user_id) with check (auth.uid() = user_id);
+*/
+async function loadRemoteData(){
+  const u = currentUser();
+  if (!u) { cache = null; return; }
+  try {
+    const rows = await SB.rest('GET', 'projects', { select: '*', filter: `user_id=eq.${u.id}&order=created_at.desc` });
+    const projects = {};
+    rows.forEach(r => {
+      projects[r.id] = {
+        id: r.id, name: r.name, description: r.description || '',
+        color: r.color, icon: r.icon, created_at: new Date(r.created_at).getTime(),
+        columns: r.data?.columns || [
+          {id:uid(), name:'A fazer',     color:'#7c3aed', tasks:[]},
+          {id:uid(), name:'Em andamento',color:'#00d4ff', tasks:[]},
+          {id:uid(), name:'Concluído',   color:'#10b981', tasks:[]},
+        ],
+        backlog: r.data?.backlog || [],
+      };
+    });
+    cache = { projects, _remoteIds: new Set(rows.map(r => r.id)) };
+  } catch (e) {
+    console.error('loadRemoteData', e);
+    toast('Erro ao carregar dados: ' + e.message, 'danger');
+    cache = { projects: {}, _remoteIds: new Set() };
+  }
+}
+
+async function saveRemoteData(){
+  const u = currentUser(); if (!u || !cache) return;
+  const localIds = new Set(Object.keys(cache.projects));
+  const remoteIds = cache._remoteIds || new Set();
+
+  // upserts
+  const rows = Object.values(cache.projects).map(p => ({
+    id: p.id, user_id: u.id,
+    name: p.name, description: p.description,
+    color: p.color, icon: p.icon,
+    data: { columns: p.columns, backlog: p.backlog },
+    updated_at: new Date().toISOString(),
+  }));
+  if (rows.length) {
+    try {
+      await SB.rest('POST', 'projects', {
+        body: rows,
+        prefer: 'resolution=merge-duplicates,return=minimal',
+      });
+    } catch (e) {
+      console.error('upsert projects', e);
+      toast('Erro ao salvar: ' + e.message, 'danger');
+      return;
+    }
+  }
+  // deletes
+  for (const id of remoteIds) {
+    if (!localIds.has(id)) {
+      try { await SB.rest('DELETE', 'projects', { filter: `id=eq.${id}` }); }
+      catch (e) { console.error('delete', e); }
+    }
+  }
+  cache._remoteIds = new Set(localIds);
+}
+
+function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+/* =========================================================
+   🔐 AUTH (hash usado só no modo localStorage)
+   ========================================================= */
+async function hash(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* =========================================================
+   🔔 TOAST
+   ========================================================= */
+function toast(msg,type=''){
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast-root').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 2800);
+}
+
+/* =========================================================
+   🧭 ROUTER
+   ========================================================= */
+const routes = {
+  '/login': renderLogin,
+  '/signup': renderSignup,
+  '/forgot': renderForgot,
+  '/dashboard': renderDashboard,
+  '/settings': renderSettings,
+  '/project': renderProject,
+};
+function navigate(path){ location.hash = path; }
+function parseHash(){
+  const h = location.hash.slice(1) || '/dashboard';
+  const [path, query] = h.split('?');
+  const params = {};
+  if(query) query.split('&').forEach(p=>{ const [k,v]=p.split('='); params[k]=decodeURIComponent(v||''); });
+  return {path, params};
+}
+async function route(){
+  const {path, params} = parseHash();
+  const isAuth = ['/login','/signup','/forgot'].includes(path);
+  const user = currentUser();
+  if(!user && !isAuth){ navigate('/login'); return; }
+  if(user && isAuth){ navigate('/dashboard'); return; }
+
+  // Em modo Supabase, garante que o cache está carregado antes de renderizar
+  if (USE_SUPABASE && user && !cache) {
+    document.getElementById('app').innerHTML = `<div class="screen" style="display:flex;align-items:center;justify-content:center;height:100vh"><div style="color:var(--muted)">Carregando…</div></div>`;
+    await loadRemoteData();
+  }
+
+  const fn = routes[path] || renderDashboard;
+  fn(params);
+}
+window.addEventListener('hashchange', route);
+
+/* =========================================================
+   🛠️  HELPERS UI
+   ========================================================= */
+function escapeHtml(s){
+  return (s??'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatDate(d){
+  if(!d) return '';
+  const date = new Date(d+'T00:00:00');
+  return date.toLocaleDateString('pt-BR');
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+/* =========================================================
+   🎩 HEADER
+   ========================================================= */
+function headerHtml(crumbs=[]){
+  const u = currentUser();
+  const name = escapeHtml(u?.name || '');
+  const crumbsHtml = crumbs.length ? `
+    <div class="crumbs">
+      <a href="#/dashboard">Dashboard</a>
+      ${crumbs.map(c=>`<span class="sep">›</span><span class="current" data-tooltip="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('')}
+    </div>` : '';
+  return `
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-brand" onclick="navigate('/dashboard')">
+          <div class="brand-logo">F</div>
+          <div class="brand-title">FlowBoard</div>
+        </div>
+        ${crumbsHtml}
+        <div class="header-right">
+          <div class="user-chip" data-tooltip="${name}">${name}</div>
+          <button class="btn-icon" data-tooltip="Configurações" onclick="navigate('/settings')">⚙️</button>
+          <button class="btn-icon" data-tooltip="Sair" onclick="doLogout()">⏻</button>
+        </div>
+      </div>
+    </header>`;
+}
+function doLogout(){
+  if (USE_SUPABASE) { SB.signOut(); cache = null; }
+  else { setLocalSession(null); }
+  navigate('/login'); toast('Sessão encerrada');
+}
+
+/* =========================================================
+   🚪 AUTH SCREENS
+   ========================================================= */
+function authShell(title, subtitle, body, foot){
+  return `
+    <div class="auth-wrap screen">
+      <div class="auth-card">
+        <div class="brand">
+          <div class="brand-logo">F</div>
+          <div class="brand-title">FlowBoard</div>
+        </div>
+        <h2>${title}</h2>
+        <p class="sub">${subtitle}</p>
+        ${body}
+        <div class="auth-foot">${foot}</div>
+      </div>
+    </div>`;
+}
+
+function renderLogin(){
+  document.getElementById('app').innerHTML = authShell(
+    'Entrar', 'Acesse sua conta para continuar',
+    `<form id="loginForm">
+       <div class="field"><label>Email</label><input class="input" type="email" name="email" required></div>
+       <div class="field"><label>Senha</label><input class="input" type="password" name="password" required></div>
+       <div class="err" id="loginErr"></div>
+       <button class="btn btn-primary" type="submit">Entrar</button>
+     </form>
+     <div style="margin-top:10px;text-align:right"><a href="#/forgot" style="font-size:13px">Esqueci minha senha</a></div>`,
+    `Não tem conta? <a href="#/signup">Criar conta</a>`
+  );
+  document.getElementById('loginForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const f = e.target;
+    const email = f.email.value.trim().toLowerCase();
+    const pwd = f.password.value;
+    const err = document.getElementById('loginErr');
+    const btn = f.querySelector('button[type=submit]');
+    btn.disabled = true; err.textContent = '';
+    try {
+      if (USE_SUPABASE) {
+        await SB.signIn(email, pwd);
+        cache = null;
+        await loadRemoteData();
+      } else {
+        const u = store.users[email];
+        if(!u) throw new Error('Conta não encontrada.');
+        const h = await hash(pwd);
+        if(h !== u.password) throw new Error('Senha incorreta.');
+        setLocalSession(email);
+      }
+      toast('Bem-vindo de volta!','success');
+      navigate('/dashboard');
+    } catch (ex) {
+      err.textContent = ex.message;
+    } finally { btn.disabled = false; }
+  });
+}
+
+function renderSignup(){
+  document.getElementById('app').innerHTML = authShell(
+    'Criar conta', 'Comece a organizar seus projetos',
+    `<form id="signForm">
+       <div class="field"><label>Nome</label><input class="input" name="name" maxlength="60" required></div>
+       <div class="field"><label>Email</label><input class="input" type="email" name="email" required></div>
+       <div class="field"><label>Senha</label><input class="input" type="password" name="password" minlength="6" required></div>
+       <div class="field"><label>Confirmar senha</label><input class="input" type="password" name="confirm" minlength="6" required></div>
+       <div class="err" id="signErr"></div>
+       <button class="btn btn-primary" type="submit">Criar conta</button>
+     </form>`,
+    `Já tem conta? <a href="#/login">Entrar</a>`
+  );
+  document.getElementById('signForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const f = e.target;
+    const name = f.name.value.trim();
+    const email = f.email.value.trim().toLowerCase();
+    const pwd = f.password.value;
+    const confirm = f.confirm.value;
+    const err = document.getElementById('signErr');
+    const btn = f.querySelector('button[type=submit]');
+    if(pwd !== confirm){ err.textContent='As senhas não coincidem.'; return; }
+    btn.disabled = true; err.textContent = '';
+    try {
+      if (USE_SUPABASE) {
+        const data = await SB.signUp(email, pwd, name);
+        if (!data.access_token) {
+          toast('Conta criada! Verifique seu email para confirmar.','success');
+          navigate('/login'); return;
+        }
+        cache = { projects: {}, _remoteIds: new Set() };
+      } else {
+        if(store.users[email]) throw new Error('Email já cadastrado.');
+        store.users[email] = {name, email, password: await hash(pwd), created_at: Date.now()};
+        store.data[email] = {projects:{}};
+        persistLocal();
+        setLocalSession(email);
+      }
+      toast('Conta criada com sucesso!','success');
+      navigate('/dashboard');
+    } catch (ex) {
+      err.textContent = ex.message;
+    } finally { btn.disabled = false; }
+  });
+}
+
+function renderForgot(){
+  document.getElementById('app').innerHTML = authShell(
+    'Recuperar senha',
+    USE_SUPABASE ? 'Enviaremos um link de recuperação para seu email' : 'Defina uma nova senha para sua conta',
+    USE_SUPABASE
+      ? `<form id="fpForm">
+           <div class="field"><label>Email</label><input class="input" type="email" name="email" required></div>
+           <div class="err" id="fpErr"></div>
+           <button class="btn btn-primary" type="submit">Enviar link</button>
+         </form>`
+      : `<form id="fpForm">
+           <div class="field"><label>Email</label><input class="input" type="email" name="email" required></div>
+           <div class="field"><label>Nova senha</label><input class="input" type="password" name="password" minlength="6" required></div>
+           <div class="err" id="fpErr"></div>
+           <button class="btn btn-primary" type="submit">Atualizar senha</button>
+         </form>`,
+    `<a href="#/login">Voltar para login</a>`
+  );
+  document.getElementById('fpForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const email = e.target.email.value.trim().toLowerCase();
+    const err = document.getElementById('fpErr');
+    try {
+      if (USE_SUPABASE) {
+        await SB.resetPassword(email);
+        toast('Email enviado! Verifique sua caixa de entrada.','success');
+        navigate('/login');
+      } else {
+        const u = store.users[email];
+        if(!u) throw new Error('Conta não encontrada.');
+        u.password = await hash(e.target.password.value);
+        persistLocal();
+        toast('Senha atualizada!','success');
+        navigate('/login');
+      }
+    } catch (ex) { err.textContent = ex.message; }
+  });
+}
+
+/* =========================================================
+   📊 DASHBOARD
+   ========================================================= */
+function renderDashboard(){
+  const data = userData() || { projects: {} };
+  const projects = Object.values(data.projects).sort((a,b)=>b.created_at-a.created_at);
+  const cards = projects.length ? projects.map(p=>`
+    <div class="project-card" onclick="navigate('/project?id=${p.id}')" style="border-top:3px solid ${p.color}">
+      <div class="pc-top">
+        <div class="pc-icon" style="background:${p.color}">${p.icon}</div>
+        <div class="pc-name" data-tooltip="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+      </div>
+      <div class="pc-desc">${escapeHtml(p.description||'Sem descrição')}</div>
+      <div class="pc-foot">
+        <span>${new Date(p.created_at).toLocaleDateString('pt-BR')}</span>
+        <div class="pc-actions" onclick="event.stopPropagation()">
+          <button class="btn-icon btn-sm" data-tooltip="Editar" onclick="openProjectDialog('${p.id}')">✎</button>
+          <button class="btn-icon btn-sm" data-tooltip="Excluir" onclick="deleteProject('${p.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`).join('')
+    : `<div class="empty" style="grid-column:1/-1">
+         <h3>Nenhum projeto ainda</h3>
+         <p>Crie seu primeiro projeto para começar a organizar suas tarefas.</p>
+       </div>`;
+
+  document.getElementById('app').innerHTML = `
+    ${headerHtml()}
+    <div class="container screen">
+      <div class="page-head">
+        <div>
+          <h1>Meus Projetos</h1>
+          <div class="sub">${projects.length} ${projects.length===1?'projeto':'projetos'}${USE_SUPABASE?' · ☁️ Sincronizado':' · 💾 Local'}</div>
+        </div>
+        <button class="btn btn-primary" style="width:auto" onclick="openProjectDialog()">+ Novo projeto</button>
+      </div>
+      <div class="grid">${cards}</div>
+    </div>`;
+}
+
+function openProjectDialog(id){
+  const data = userData();
+  const p = id ? data.projects[id] : null;
+  const initial = p ? {...p} : {name:'',description:'',color:COLORS[0],icon:ICONS[0]};
+  showModal(`
+    <h3>${p?'Editar':'Novo'} projeto</h3>
+    <form id="projForm">
+      <div class="field"><label>Nome</label><input class="input" name="name" maxlength="80" required value="${escapeHtml(initial.name)}"></div>
+      <div class="field"><label>Descrição</label><textarea class="input" name="description" rows="3" maxlength="500">${escapeHtml(initial.description)}</textarea></div>
+      <div class="field"><label>Cor</label>
+        <div class="swatches">
+          ${COLORS.map(c=>`<div class="swatch ${c===initial.color?'active':''}" data-color="${c}" style="background:${c}"></div>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Ícone</label>
+        <div class="icons-grid">
+          ${ICONS.map(i=>`<button type="button" class="icon-btn ${i===initial.icon?'active':''}" data-icon="${i}">${i}</button>`).join('')}
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="width:auto">Salvar</button>
+      </div>
+    </form>
+  `);
+  let chosen = {color:initial.color, icon:initial.icon};
+  document.querySelectorAll('.swatch').forEach(s=>s.onclick=()=>{
+    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active'); chosen.color = s.dataset.color;
+  });
+  document.querySelectorAll('.icon-btn').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.icon-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); chosen.icon = b.dataset.icon;
+  });
+  document.getElementById('projForm').onsubmit = e=>{
+    e.preventDefault();
+    const f = e.target;
+    const payload = {
+      name:f.name.value.trim(), description:f.description.value.trim(),
+      color:chosen.color, icon:chosen.icon,
+    };
+    if(p){
+      Object.assign(data.projects[id], payload);
+    } else {
+      const nid = uid();
+      data.projects[nid] = {
+        id:nid, ...payload, created_at: Date.now(),
+        columns: [
+          {id:uid(), name:'A fazer',     color:'#7c3aed', tasks:[]},
+          {id:uid(), name:'Em andamento',color:'#00d4ff', tasks:[]},
+          {id:uid(), name:'Concluído',   color:'#10b981', tasks:[]},
+        ],
+        backlog: []
+      };
+    }
+    persist(); closeModal(); renderDashboard();
+    toast(p?'Projeto atualizado':'Projeto criado','success');
+  };
+}
+
+function deleteProject(id){
+  confirmDialog('Excluir projeto?','Esta ação não pode ser desfeita.',()=>{
+    const data = userData();
+    delete data.projects[id]; persist(); renderDashboard();
+    toast('Projeto excluído');
+  });
+}
+
+/* =========================================================
+   📋 PROJECT (KANBAN) + Drag & Drop
+   ========================================================= */
+let dragInfo = null;
+
+function renderProject(params){
+  const data = userData();
+  const p = data?.projects[params.id];
+  if(!p){ navigate('/dashboard'); return; }
+
+  const colsHtml = p.columns.map(col=>`
+    <div class="column" data-col-id="${col.id}">
+      <div class="col-head">
+        <div class="col-dot" style="background:${col.color}"></div>
+        <div class="col-name" data-tooltip="${escapeHtml(col.name)}">${escapeHtml(col.name)}</div>
+        <div class="col-count">${col.tasks.length}</div>
+        <div class="col-actions">
+          <button class="btn-icon btn-sm" data-tooltip="Editar" onclick="openColumnDialog('${p.id}','${col.id}')">✎</button>
+          <button class="btn-icon btn-sm" data-tooltip="Excluir" onclick="deleteColumn('${p.id}','${col.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="col-body" data-col-body="${col.id}"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${p.id}','${col.id}')">
+        ${col.tasks.map(t=>taskHtml(t,p.id,col.id)).join('') || ''}
+      </div>
+      <div class="col-foot">
+        <button onclick="openTaskDialog('${p.id}','${col.id}')">+ Nova tarefa</button>
+      </div>
+    </div>
+  `).join('');
+
+  const backlogHtml = p.backlog.length
+    ? p.backlog.map(t=>`
+      <div class="task" draggable="true"
+           ondragstart="onDragStart(event,'${p.id}','backlog','${t.id}')"
+           ondragend="onDragEnd(event)"
+           onclick="openTaskDialog('${p.id}','backlog','${t.id}')">
+        <div class="task-title" data-tooltip="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>
+        ${t.due_date?`<div class="task-meta"><span class="task-due ${isLate(t.due_date)?'late':''}">📅 ${formatDate(t.due_date)}</span></div>`:''}
+      </div>`).join('')
+    : `<div class="backlog-empty">Nenhuma tarefa no backlog. Tarefas excluídas vão para cá.</div>`;
+
+  document.getElementById('app').innerHTML = `
+    ${headerHtml([p.name])}
+    <div class="container screen">
+      <div class="page-head">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+          <div class="pc-icon" style="background:${p.color};width:44px;height:44px;border-radius:12px;font-size:20px">${p.icon}</div>
+          <div style="min-width:0">
+            <h1 data-tooltip="${escapeHtml(p.name)}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw">${escapeHtml(p.name)}</h1>
+            <div class="sub">${escapeHtml(p.description||'Sem descrição')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="openProjectDialog('${p.id}')">✎ Editar</button>
+          <button class="btn btn-primary" style="width:auto" onclick="openColumnDialog('${p.id}')">+ Coluna</button>
+        </div>
+      </div>
+
+      <div class="kanban-wrap">
+        ${colsHtml}
+        <button class="add-col-btn" onclick="openColumnDialog('${p.id}')">+ Adicionar coluna</button>
+      </div>
+
+      <div class="backlog">
+        <h3>📦 Backlog <span class="col-count">${p.backlog.length}</span></h3>
+        <div class="backlog-list" data-col-body="backlog"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${p.id}','backlog')">
+          ${backlogHtml}
+        </div>
+      </div>
+    </div>`;
+}
+
+function taskHtml(t, projectId, colId){
+  return `
+    <div class="task" draggable="true"
+         ondragstart="onDragStart(event,'${projectId}','${colId}','${t.id}')"
+         ondragend="onDragEnd(event)"
+         onclick="openTaskDialog('${projectId}','${colId}','${t.id}')">
+      <div class="task-title" data-tooltip="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>
+      ${t.due_date?`<div class="task-meta"><span class="task-due ${isLate(t.due_date)?'late':''}">📅 ${formatDate(t.due_date)}</span></div>`:''}
+    </div>`;
+}
+function isLate(d){ return d && d < todayISO(); }
+
+function onDragStart(e, projectId, colId, taskId){
+  dragInfo = {projectId, colId, taskId};
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(e){ e.target.classList.remove('dragging'); }
+function onDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, projectId, destCol){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragInfo) return;
+  const data = userData();
+  const p = data.projects[projectId];
+  const fromList = dragInfo.colId==='backlog' ? p.backlog : p.columns.find(c=>c.id===dragInfo.colId).tasks;
+  const idx = fromList.findIndex(t=>t.id===dragInfo.taskId);
+  if(idx<0) return;
+  const [task] = fromList.splice(idx,1);
+  const toList = destCol==='backlog' ? p.backlog : p.columns.find(c=>c.id===destCol).tasks;
+  toList.push(task);
+  dragInfo = null;
+  persist(); renderProject({id:projectId});
+}
+
+/* columns */
+function openColumnDialog(projectId, colId){
+  const data = userData();
+  const p = data.projects[projectId];
+  const col = colId ? p.columns.find(c=>c.id===colId) : null;
+  const initial = col ? {...col} : {name:'',color:COLORS[0]};
+  showModal(`
+    <h3>${col?'Editar':'Nova'} coluna</h3>
+    <form id="colForm">
+      <div class="field"><label>Nome</label><input class="input" name="name" maxlength="50" required value="${escapeHtml(initial.name)}"></div>
+      <div class="field"><label>Cor</label>
+        <div class="swatches">
+          ${COLORS.map(c=>`<div class="swatch ${c===initial.color?'active':''}" data-color="${c}" style="background:${c}"></div>`).join('')}
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="width:auto">Salvar</button>
+      </div>
+    </form>
+  `);
+  let chosen = initial.color;
+  document.querySelectorAll('.swatch').forEach(s=>s.onclick=()=>{
+    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active'); chosen = s.dataset.color;
+  });
+  document.getElementById('colForm').onsubmit = e=>{
+    e.preventDefault();
+    const name = e.target.name.value.trim();
+    if(col){ col.name=name; col.color=chosen; }
+    else p.columns.push({id:uid(), name, color:chosen, tasks:[]});
+    persist(); closeModal(); renderProject({id:projectId});
+    toast(col?'Coluna atualizada':'Coluna criada','success');
+  };
+}
+function deleteColumn(projectId, colId){
+  confirmDialog('Excluir coluna?','As tarefas desta coluna serão movidas para o backlog.',()=>{
+    const data = userData(); const p = data.projects[projectId];
+    const i = p.columns.findIndex(c=>c.id===colId);
+    if(i<0) return;
+    p.backlog.push(...p.columns[i].tasks);
+    p.columns.splice(i,1);
+    persist(); renderProject({id:projectId});
+    toast('Coluna excluída');
+  });
+}
+
+/* tasks */
+function openTaskDialog(projectId, colId, taskId){
+  const data = userData(); const p = data.projects[projectId];
+  const list = colId==='backlog' ? p.backlog : p.columns.find(c=>c.id===colId).tasks;
+  const t = taskId ? list.find(x=>x.id===taskId) : null;
+  const initial = t ? {...t} : {title:'',description:'',due_date:''};
+  const minDate = new Date(p.created_at).toISOString().slice(0,10);
+  showModal(`
+    <h3>${t?'Editar':'Nova'} tarefa</h3>
+    <form id="taskForm">
+      <div class="field"><label>Título</label><input class="input" name="title" maxlength="120" required value="${escapeHtml(initial.title)}"></div>
+      <div class="field"><label>Descrição</label><textarea class="input" name="description" rows="3" maxlength="1000">${escapeHtml(initial.description)}</textarea></div>
+      <div class="field"><label>Data de entrega</label>
+        <input class="input" type="date" name="due_date" min="${minDate}" value="${initial.due_date||''}">
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Não pode ser anterior à criação do projeto.</div>
+      </div>
+      <div class="modal-foot ${t?'between':''}">
+        ${t?`<button type="button" class="btn btn-danger" onclick="deleteTask('${projectId}','${colId}','${taskId}')">Excluir</button>`:''}
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="width:auto">Salvar</button>
+        </div>
+      </div>
+    </form>
+  `);
+  document.getElementById('taskForm').onsubmit = e=>{
+    e.preventDefault();
+    const f = e.target;
+    const payload = {
+      title:f.title.value.trim(),
+      description:f.description.value.trim(),
+      due_date: f.due_date.value || null,
+    };
+    if(t){ Object.assign(t, payload); }
+    else list.push({id:uid(), ...payload, created_at: Date.now()});
+    persist(); closeModal(); renderProject({id:projectId});
+    toast(t?'Tarefa atualizada':'Tarefa criada','success');
+  };
+}
+function deleteTask(projectId, colId, taskId){
+  const data = userData(); const p = data.projects[projectId];
+  const list = colId==='backlog' ? p.backlog : p.columns.find(c=>c.id===colId).tasks;
+  const i = list.findIndex(x=>x.id===taskId);
+  if(i>=0){
+    if(colId!=='backlog'){ p.backlog.push(list[i]); }
+    list.splice(i,1);
+    persist(); closeModal(); renderProject({id:projectId});
+    toast(colId==='backlog'?'Tarefa excluída':'Tarefa movida para o backlog');
+  }
+}
+
+/* =========================================================
+   ⚙️  SETTINGS
+   ========================================================= */
+function renderSettings(){
+  const u = currentUser();
+  const modeLabel = USE_SUPABASE ? '☁️ Supabase' : '💾 Local (localStorage)';
+  document.getElementById('app').innerHTML = `
+    ${headerHtml(['Configurações'])}
+    <div class="container screen" style="max-width:640px">
+      <div class="page-head"><h1>Configurações</h1></div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
+        <h3 style="margin-bottom:12px">Perfil</h3>
+        <div class="field"><label>Nome</label><input class="input" value="${escapeHtml(u.name)}" disabled></div>
+        <div class="field"><label>Email</label><input class="input" value="${escapeHtml(u.email)}" disabled></div>
+        <div class="field"><label>Backend</label><input class="input" value="${modeLabel}" disabled></div>
+      </div>
+
+      ${USE_SUPABASE ? `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
+        <h3 style="margin-bottom:12px">Alterar senha</h3>
+        <form id="pwdForm">
+          <div class="field"><label>Nova senha</label><input class="input" type="password" name="next" minlength="6" required></div>
+          <div class="err" id="pwdErr"></div>
+          <button class="btn btn-primary" style="width:auto" type="submit">Atualizar senha</button>
+        </form>
+      </div>` : ''}
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+        <h3 style="margin-bottom:8px;color:var(--danger)">Zona perigosa</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Excluir todos os seus dados (projetos, colunas e tarefas).</p>
+        <button class="btn btn-danger" onclick="wipeData()">Excluir todos os dados</button>
+      </div>
+    </div>`;
+
+  if (USE_SUPABASE) {
+    document.getElementById('pwdForm').onsubmit = async e=>{
+      e.preventDefault();
+      const err = document.getElementById('pwdErr');
+      try {
+        await SB.updatePassword(e.target.next.value);
+        toast('Senha atualizada','success'); e.target.reset();
+      } catch (ex) { err.textContent = ex.message; }
+    };
+  }
+}
+function wipeData(){
+  confirmDialog('Excluir todos os dados?','Esta ação não pode ser desfeita.', async ()=>{
+    if (USE_SUPABASE) {
+      const u = currentUser();
+      try {
+        await SB.rest('DELETE', 'projects', { filter: `user_id=eq.${u.id}` });
+        cache = { projects: {}, _remoteIds: new Set() };
+      } catch (e) { toast('Erro: '+e.message,'danger'); return; }
+    } else {
+      const u = currentUser();
+      store.data[u.email] = {projects:{}};
+      persistLocal();
+    }
+    toast('Dados excluídos'); navigate('/dashboard');
+  });
+}
+
+/* =========================================================
+   🪟 MODAL HELPERS
+   ========================================================= */
+function showModal(html){
+  document.getElementById('modal-root').innerHTML = `<div class="modal-back" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;
+}
+function closeModal(){ document.getElementById('modal-root').innerHTML=''; }
+function confirmDialog(title, msg, onYes){
+  showModal(`
+    <h3>${title}</h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:8px">${msg}</p>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" id="yesBtn">Confirmar</button>
+    </div>
+  `);
+  document.getElementById('yesBtn').onclick = ()=>{ closeModal(); onYes(); };
+}
+
+/* =========================================================
+   🚀 BOOT
+   ========================================================= */
+window.openProjectDialog = openProjectDialog;
+window.deleteProject = deleteProject;
+window.openColumnDialog = openColumnDialog;
+window.deleteColumn = deleteColumn;
+window.openTaskDialog = openTaskDialog;
+window.deleteTask = deleteTask;
+window.onDragStart = onDragStart;
+window.onDragEnd = onDragEnd;
+window.onDragOver = onDragOver;
+window.onDragLeave = onDragLeave;
+window.onDrop = onDrop;
+window.navigate = navigate;
+window.doLogout = doLogout;
+window.closeModal = closeModal;
+window.wipeData = wipeData;
+
+route();
+</script>
+</body>
+</html>
